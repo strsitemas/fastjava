@@ -1,4 +1,29 @@
-package com.fastjava.core;
+# patch_postgres.py
+# Adiciona suporte a PostgreSQL (Neon) ao FastJava
+# Coloque em C:\GABARITO\capas\fast\ e rode: python patch_postgres.py
+
+import os
+import re
+
+POM_FILE  = r"C:\GABARITO\capas\fast\pom.xml"
+JAVA_FILE = r"C:\GABARITO\capas\fast\src\main\java\com\fastjava\core\ExampleApplication.java"
+
+# ─── 1. PATCH DO POM.XML ────────────────────────────────────────────────────
+
+POM_ANCHOR = "        <dependency>\n            <groupId>org.junit.jupiter</groupId>"
+
+POM_NEW_DEP = """        <!-- PostgreSQL JDBC Driver -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.3</version>
+        </dependency>
+
+        """
+
+# ─── 2. NOVO ExampleApplication.java COMPLETO ───────────────────────────────
+
+NEW_EXAMPLE = r'''package com.fastjava.core;
 
 import java.io.IOException;
 import java.security.MessageDigest;
@@ -18,33 +43,9 @@ class DB {
     );
 
     static Connection connect() throws SQLException {
-        // Extrai user:password@host do formato postgresql://user:pass@host/db?params
-        // e passa via Properties para evitar conflito de parsing com @ na senha
-        try {
-            String raw = URL.replaceFirst("^postgresql://", "").replaceFirst("^jdbc:postgresql://", "");
-            // raw = "user:pass@host/db?params"
-            int atIdx   = raw.lastIndexOf('@');
-            String userInfo = raw.substring(0, atIdx);           // "user:pass"
-            String hostPart = raw.substring(atIdx + 1);          // "host/db?params"
-
-            int colonIdx = userInfo.indexOf(':');
-            String user = userInfo.substring(0, colonIdx);
-            String pass = userInfo.substring(colonIdx + 1);
-
-            // Monta JDBC URL sem credenciais
-            String jdbcUrl = "jdbc:postgresql://" + hostPart;
-
-            java.util.Properties props = new java.util.Properties();
-            props.setProperty("user", user);
-            props.setProperty("password", pass);
-            props.setProperty("ssl", "true");
-            props.setProperty("sslmode", "require");
-
-            return DriverManager.getConnection(jdbcUrl, props);
-        } catch (Exception e) {
-            if (e instanceof SQLException) throw (SQLException) e;
-            throw new SQLException("Falha ao parsear DATABASE_URL: " + e.getMessage(), e);
-        }
+        // Converte formato postgres:// para jdbc:postgresql://
+        String jdbc = URL.startsWith("jdbc:") ? URL : "jdbc:" + URL;
+        return DriverManager.getConnection(jdbc);
     }
 
     static void migrate() {
@@ -557,3 +558,43 @@ public class ExampleApplication {
         Log.info("GET  /openapi.json       - documentacao OpenAPI 3.0");
     }
 }
+'''
+
+# ─── APLICAR PATCHES ────────────────────────────────────────────────────────
+
+def patch_pom():
+    with open(POM_FILE, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    if "org.postgresql" in content:
+        print("AVISO: driver PostgreSQL ja esta no pom.xml — nenhuma alteracao.")
+        return
+
+    if POM_ANCHOR not in content:
+        print("ERRO: ancora nao encontrada no pom.xml")
+        return
+
+    content = content.replace(POM_ANCHOR, POM_NEW_DEP + POM_ANCHOR)
+
+    with open(POM_FILE, "w", encoding="utf-8", newline="\n") as f:
+        f.write(content)
+    print("OK: driver PostgreSQL adicionado ao pom.xml")
+
+
+def patch_example():
+    with open(JAVA_FILE, "w", encoding="utf-8", newline="\n") as f:
+        f.write(NEW_EXAMPLE)
+    print("OK: ExampleApplication.java reescrito com PostgreSQL")
+
+
+if __name__ == "__main__":
+    print("=== patch_postgres.py ===")
+    patch_pom()
+    patch_example()
+    print()
+    print("Agora rode:")
+    print("  mvn clean package -DskipTests")
+    print("  java -jar target\\fastjava.jar")
+    print()
+    print("Teste o health check:")
+    print("  curl http://localhost:8080/health")
