@@ -1,0 +1,63 @@
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# IDE - IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# IDE - Eclipse
+.eclipse/
+.classpath
+.project
+.settings/
+
+# IDE - VS Code
+.vscode/
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Ambiente
+.env
+.env.local
+.env.production
+jwt.secret
+
+# Scripts de debug e geração (não precisam ir ao repositório)
+gerar.py
+estruturar.py
+debug_*.py
+debug_*.ps1
+setup_*.ps1
+setup_*.py
+
+# FastJava específico
+fastjava.pid
