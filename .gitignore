@@ -61,3 +61,7 @@ setup_*.py
 
 # FastJava específico
 fastjava.pid
+
+fix_db_connect.py
+patch_openapi.py
+patch_postgres.py
